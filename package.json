@@ -6,7 +6,10 @@
   "type": "module",
   "scripts": {
     "build": "tsc",
-    "test": "jest"
+    "format": "prettier . --check",
+    "lint": "eslint .",
+    "test": "jest",
+    "prepare": "husky install"
   },
   "repository": {
     "type": "git",
@@ -25,10 +28,22 @@
   "homepage": "https://github.com/flykick-cloud/react-infra-diagrams#readme",
   "devDependencies": {
     "@types/react": "^18.3.3",
+    "@typescript-eslint/eslint-plugin": "^7.13.0",
+    "@typescript-eslint/parser": "^7.13.0",
+    "eslint": "^8.57.0",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-react": "^7.34.2",
+    "husky": "^9.0.11",
+    "lint-staged": "^15.2.7",
+    "prettier": "^3.3.2",
     "react": "^18.3.1",
     "typescript": "^5.4.5"
   },
   "peerDependencies": {
     "react": ">=16.8"
+  },
+  "lint-staged": {
+    "*.{js,cjs,mjs,ts,tsx}": "eslint --cache --fix",
+    "*.{js,cjs,mjs,ts,tsx,md}": "prettier --write"
   }
 }
