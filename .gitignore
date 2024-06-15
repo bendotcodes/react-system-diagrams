@@ -1,0 +1,8 @@
+# Mac
+.DS_Store
+
+# Node libraries
+node_modules
+
+# Output files
+/dist
