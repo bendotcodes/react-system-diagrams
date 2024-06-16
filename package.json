@@ -1,7 +1,7 @@
 {
-  "name": "react-infra-diagrams",
+  "name": "react-system-diagrams",
   "version": "0.0.0",
-  "description": "React drag & drop for infrastructure diagrams",
+  "description": "Build and display beautiful system diagrams",
   "main": "dist/index.js",
   "type": "module",
   "scripts": {

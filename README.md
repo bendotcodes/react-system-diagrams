@@ -1,1 +1,1 @@
-## React drag & drop for infrastructure diagrams
+## Build and display beautiful system diagrams
