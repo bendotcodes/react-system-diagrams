@@ -32,6 +32,9 @@ jobs:
       - name: Build Storybook
         run: yarn build-storybook --quiet
 
+      - name: Fix Storybook on GH pages
+        run: touch storybook-static/.nojekyll
+
       - name: Publish to NPM
         run: npm publish
 
