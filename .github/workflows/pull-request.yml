@@ -1,13 +1,19 @@
-name: Pull Request - Run Tests
+name: Pull Request
 concurrency: preview-${{ github.ref }}
 
 on:
   pull_request:
+    types:
+      - opened
+      - reopened
+      - synchronize
+      - closed
 
 jobs:
   test:
     name: Test
     runs-on: ubuntu-latest
+    if: github.event.action != 'closed'
 
     steps:
       - name: Checkout code
@@ -48,3 +54,17 @@ jobs:
         run: yarn test-storybook
         env:
           TARGET_URL: '${{ steps.deploy.outputs.deployment-url }}'
+
+  cleanup:
+    name: Clean up
+    runs-on: ubuntu-latest
+    if: github.event.action == 'closed'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Remove PR preview
+        uses: rossjrw/pr-preview-action@v1
+        with:
+          action: remove
