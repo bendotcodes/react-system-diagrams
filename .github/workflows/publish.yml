@@ -1,4 +1,4 @@
-name: Publish
+name: Publish Package
 
 on:
   release:
@@ -29,5 +29,18 @@ jobs:
       - name: Build
         run: npm run build
 
+      - name: Build Storybook
+        run: yarn build-storybook --quiet
+
+      - name: Fix Storybook on GH pages
+        run: touch storybook-static/.nojekyll
+
       - name: Publish to NPM
         run: npm publish
+
+      - uses: JamesIves/github-pages-deploy-action@v4
+        with:
+          folder: storybook-static
+          branch: gh-pages
+          clean-exclude: pr-preview
+          force: false

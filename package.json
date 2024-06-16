@@ -5,11 +5,13 @@
   "main": "dist/index.js",
   "type": "module",
   "scripts": {
-    "build": "tsc",
+    "build": "tsc --project tsconfig.build.json",
     "format": "prettier . --check",
     "lint": "eslint .",
-    "test": "jest",
-    "prepare": "husky install"
+    "test-storybook": "test-storybook",
+    "prepare": "husky install",
+    "storybook": "storybook dev -p 6006",
+    "build-storybook": "storybook build"
   },
   "repository": {
     "type": "git",
@@ -27,16 +29,28 @@
   },
   "homepage": "https://github.com/flykick-cloud/react-infra-diagrams#readme",
   "devDependencies": {
+    "@chromatic-com/storybook": "^1.5.0",
+    "@storybook/addon-essentials": "^8.1.9",
+    "@storybook/addon-interactions": "^8.1.9",
+    "@storybook/addon-links": "^8.1.9",
+    "@storybook/addon-onboarding": "^8.1.9",
+    "@storybook/blocks": "^8.1.9",
+    "@storybook/react": "^8.1.9",
+    "@storybook/react-vite": "^8.1.9",
+    "@storybook/test": "^8.1.9",
+    "@storybook/test-runner": "^0.18.2",
     "@types/react": "^18.3.3",
     "@typescript-eslint/eslint-plugin": "^7.13.0",
     "@typescript-eslint/parser": "^7.13.0",
     "eslint": "^8.57.0",
     "eslint-config-prettier": "^9.1.0",
     "eslint-plugin-react": "^7.34.2",
+    "eslint-plugin-storybook": "^0.8.0",
     "husky": "^9.0.11",
     "lint-staged": "^15.2.7",
     "prettier": "^3.3.2",
     "react": "^18.3.1",
+    "storybook": "^8.1.9",
     "typescript": "^5.4.5"
   },
   "peerDependencies": {

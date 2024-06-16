@@ -9,3 +9,7 @@ node_modules
 
 # ESLint
 .eslintcache
+*storybook.log
+
+# Storybook
+storybook-static

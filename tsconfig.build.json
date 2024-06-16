@@ -10,14 +10,8 @@
     "allowSyntheticDefaultImports": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
-    "sourceMap": true
+    "sourceMap": true,
+    "outDir": "dist"
   },
-  "include": [
-    "**/*.ts",
-    "**/*.tsx",
-    "**/*.js",
-    ".eslintrc.cjs",
-    ".storybook/*.ts"
-  ],
-  "exclude": ["node_modules", "storybook-static"]
+  "files": ["src/index.ts"]
 }
