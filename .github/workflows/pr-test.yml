@@ -1,0 +1,50 @@
+name: Pull Request - Run Tests
+concurrency: preview-${{ github.ref }}
+
+on:
+  pull_request:
+
+jobs:
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup NodeJS 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Check formatting
+        run: npm run format
+
+      - name: Check linting
+        run: npm run lint
+
+      - name: Build
+        run: npm run build
+
+      - name: Build Storybook
+        run: yarn build-storybook --quiet
+
+      - name: Deploy preview
+        id: deploy
+        uses: rossjrw/pr-preview-action@v1
+        with:
+          source-dir: ./storybook-static/
+          action: deploy
+
+      - name: Install Playwright
+        run: npx playwright install --with-deps
+
+      - name: Run Storybook tests
+        run: yarn test-storybook
+        env:
+          TARGET_URL: '${{ steps.deploy.outputs.deployment-url }}'
