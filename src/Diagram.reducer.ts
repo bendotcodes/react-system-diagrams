@@ -7,24 +7,40 @@ type State = {
 };
 
 type DiagramState = {
-  activeComponent: ActiveComponent | null;
+  activeComponent: ComponentState | null;
+  viewport: ViewportState;
 };
 
-type ActiveComponent = {
+type ComponentState = {
   id: string;
   delta: Position;
+};
+
+type ViewportState = {
+  moving: boolean;
+  position: Position;
 };
 
 type DiagramAction =
   | { type: 'move-begin'; id: string }
   | { type: 'move'; position: Position }
-  | { type: 'move-end' };
+  | { type: 'move-end' }
+  | { type: 'viewport-begin' }
+  | { type: 'viewport-move'; position: Position }
+  | { type: 'viewport-end' };
 
 export default function useDiagram(initialData: DiagramData) {
   return useReducer(reducer, {
     data: initialData,
     state: {
       activeComponent: null,
+      viewport: {
+        moving: false,
+        position: {
+          x: 0,
+          y: 0,
+        },
+      },
     },
   });
 }
@@ -85,8 +101,55 @@ function reducer(state: State, action: DiagramAction): State {
       return {
         ...state,
         state: {
-          ...state,
+          ...state.state,
           activeComponent: null,
+        },
+      };
+
+    case 'viewport-begin':
+      if (state.state.activeComponent) {
+        return state;
+      } else {
+        return {
+          ...state,
+          state: {
+            ...state.state,
+            viewport: {
+              ...state.state.viewport,
+              moving: true,
+            },
+          },
+        };
+      }
+
+    case 'viewport-move':
+      if (state.state.viewport.moving) {
+        return {
+          ...state,
+          state: {
+            ...state.state,
+            viewport: {
+              ...state.state.viewport,
+              position: {
+                x: state.state.viewport.position.x + action.position.x,
+                y: state.state.viewport.position.y + action.position.y,
+              },
+            },
+          },
+        };
+      } else {
+        return state;
+      }
+
+    case 'viewport-end':
+      return {
+        ...state,
+        state: {
+          ...state.state,
+          viewport: {
+            ...state.state.viewport,
+            moving: false,
+          },
         },
       };
 

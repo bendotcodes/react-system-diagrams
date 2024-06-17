@@ -21,8 +21,8 @@ export default function Component({ id, data }: Props) {
         border: 1px solid #d3d3d3;
         padding: 2rem;
         cursor: move;
-        top: ${data.position}px;
-        left: ${data.position}px;
+        top: ${data.position.y}px;
+        left: ${data.position.x}px;
       `}
       ref={setNodeRef}
       {...listeners}
