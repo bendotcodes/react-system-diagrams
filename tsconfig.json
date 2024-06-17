@@ -17,7 +17,8 @@
     "**/*.tsx",
     "**/*.js",
     ".eslintrc.cjs",
-    ".storybook/*.ts"
+    ".storybook/*.ts",
+    ".storybook/preview.tsx"
   ],
-  "exclude": ["node_modules", "storybook-static"]
+  "exclude": ["node_modules", "dist", "storybook-static"]
 }
