@@ -1,5 +1,5 @@
 import { useReducer } from 'react';
-import { DiagramData, Position } from './types';
+import { ComponentState, DiagramData, Position } from './types';
 
 type State = {
   data: DiagramData;
@@ -7,13 +7,13 @@ type State = {
 };
 
 type DiagramState = {
-  activeComponent: ComponentState | null;
+  activeComponent: ActiveComponent | null;
   viewport: ViewportState;
 };
 
-type ComponentState = {
+type ActiveComponent = {
   id: string;
-  delta: Position;
+  state: ComponentState;
 };
 
 type ViewportState = {
@@ -23,11 +23,13 @@ type ViewportState = {
 
 type DiagramAction =
   | { type: 'move-begin'; id: string }
-  | { type: 'move'; position: Position }
   | { type: 'move-end' }
   | { type: 'viewport-begin' }
-  | { type: 'viewport-move'; position: Position }
-  | { type: 'viewport-end' };
+  | { type: 'viewport-end' }
+  | { type: 'move'; position: Position }
+  | { type: 'leave' }
+  | { type: 'edit-begin'; id: string }
+  | { type: 'edit-end'; text: string };
 
 export default function useDiagram(initialData: DiagramData) {
   return useReducer(reducer, {
@@ -48,63 +50,33 @@ export default function useDiagram(initialData: DiagramData) {
 function reducer(state: State, action: DiagramAction): State {
   switch (action.type) {
     case 'move-begin':
-      return {
-        data: state.data,
-        state: {
-          ...state.state,
-          activeComponent: {
-            id: action.id,
-            delta: {
-              x: 0,
-              y: 0,
-            },
-          },
-        },
-      };
-
-    case 'move':
       if (state.state.activeComponent) {
-        const activeId = state.state.activeComponent.id;
-        const newComponent = { ...state.data.components[activeId] };
-        newComponent.position = {
-          x:
-            newComponent.position.x +
-            action.position.x -
-            state.state.activeComponent.delta.x,
-          y:
-            newComponent.position.y +
-            action.position.y -
-            state.state.activeComponent.delta.y,
-        };
-
+        return state;
+      } else {
         return {
-          data: {
-            ...state.data,
-            components: {
-              ...state.data.components,
-              [activeId]: newComponent,
-            },
-          },
+          data: state.data,
           state: {
             ...state.state,
             activeComponent: {
-              ...state.state.activeComponent,
-              delta: action.position,
+              id: action.id,
+              state: ComponentState.Moving,
             },
+          },
+        };
+      }
+
+    case 'move-end':
+      if (state.state.activeComponent?.state === ComponentState.Moving) {
+        return {
+          ...state,
+          state: {
+            ...state.state,
+            activeComponent: null,
           },
         };
       } else {
         return state;
       }
-
-    case 'move-end':
-      return {
-        ...state,
-        state: {
-          ...state.state,
-          activeComponent: null,
-        },
-      };
 
     case 'viewport-begin':
       if (state.state.activeComponent) {
@@ -122,8 +94,42 @@ function reducer(state: State, action: DiagramAction): State {
         };
       }
 
-    case 'viewport-move':
+    case 'viewport-end':
       if (state.state.viewport.moving) {
+        return {
+          ...state,
+          state: {
+            ...state.state,
+            viewport: {
+              ...state.state.viewport,
+              moving: false,
+            },
+          },
+        };
+      } else {
+        return state;
+      }
+
+    case 'move':
+      if (state.state.activeComponent?.state === ComponentState.Moving) {
+        const activeId = state.state.activeComponent.id;
+        const newComponent = { ...state.data.components[activeId] };
+        newComponent.position = {
+          x: newComponent.position.x + action.position.x,
+          y: newComponent.position.y + action.position.y,
+        };
+
+        return {
+          data: {
+            ...state.data,
+            components: {
+              ...state.data.components,
+              [activeId]: newComponent,
+            },
+          },
+          state: state.state,
+        };
+      } else if (state.state.viewport.moving) {
         return {
           ...state,
           state: {
@@ -141,17 +147,57 @@ function reducer(state: State, action: DiagramAction): State {
         return state;
       }
 
-    case 'viewport-end':
+    case 'leave':
+      if (state.state.activeComponent?.state === ComponentState.Moving) {
+        return {
+          ...state,
+          state: {
+            ...state.state,
+            activeComponent: null,
+            viewport: {
+              ...state.state.viewport,
+              moving: false,
+            },
+          },
+        };
+      } else {
+        return state;
+      }
+
+    case 'edit-begin':
       return {
-        ...state,
+        data: state.data,
         state: {
           ...state.state,
-          viewport: {
-            ...state.state.viewport,
-            moving: false,
+          activeComponent: {
+            id: action.id,
+            state: ComponentState.Editing,
           },
         },
       };
+
+    case 'edit-end':
+      if (state.state.activeComponent?.state === ComponentState.Editing) {
+        const activeId = state.state.activeComponent.id;
+        const newComponent = { ...state.data.components[activeId] };
+        newComponent.name = action.text;
+
+        return {
+          data: {
+            ...state.data,
+            components: {
+              ...state.data.components,
+              [activeId]: newComponent,
+            },
+          },
+          state: {
+            ...state.state,
+            activeComponent: null,
+          },
+        };
+      } else {
+        return state;
+      }
 
     default:
       return state;

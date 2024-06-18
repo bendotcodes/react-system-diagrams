@@ -1,6 +1,20 @@
-export default function Grid() {
+import { Position } from './types';
+
+type Props = {
+  moving: boolean;
+  position: Position;
+  onMouseDown: () => void;
+  onMouseUp: () => void;
+};
+
+export default function Grid({
+  moving,
+  position,
+  onMouseDown,
+  onMouseUp,
+}: Props) {
   return (
-    <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
+    <>
       <defs>
         <pattern
           id="smallGrid"
@@ -25,8 +39,20 @@ export default function Grid() {
           />
         </pattern>
       </defs>
-
-      <rect width="100%" height="100%" fill="url(#grid)" />
-    </svg>
+      <rect
+        x={-position.x}
+        y={-position.y}
+        width="100%"
+        height="100%"
+        fill="url(#grid)"
+        style={{ cursor: moving ? 'grabbing' : 'grab' }}
+        onMouseDown={() => {
+          onMouseDown();
+        }}
+        onMouseUp={() => {
+          onMouseUp();
+        }}
+      />
+    </>
   );
 }

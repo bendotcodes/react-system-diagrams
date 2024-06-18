@@ -15,7 +15,8 @@ export const Example: Story = {
       components: {
         test: {
           name: 'Test',
-          position: { x: 0, y: 0 },
+          position: { x: 10, y: 10 },
+          size: { width: 150, height: 50 },
         },
       },
     },

@@ -1,11 +1,9 @@
-import { DndContext, DragStartEvent, DragMoveEvent } from '@dnd-kit/core';
-import { restrictToParentElement } from '@dnd-kit/modifiers';
 import { css } from '@emotion/css';
 
-import { DiagramData } from './types';
-import Component from './Component';
+import { ComponentState, DiagramData } from './types';
 import useDiagram from './Diagram.reducer';
 import Grid from './Grid';
+import Component from './Component';
 
 type Props = {
   initialData: DiagramData;
@@ -14,77 +12,75 @@ type Props = {
 export default function Diagram({ initialData }: Props) {
   const [state, dispatch] = useDiagram(initialData);
 
-  const onDragStart = (e: DragStartEvent) => {
-    dispatch({ type: 'move-begin', id: e.active.id as string });
-  };
-
-  const onDragMove = (e: DragMoveEvent) => {
-    dispatch({ type: 'move', position: e.delta });
-  };
-
-  const onDragEnd = () => {
-    dispatch({ type: 'move-end' });
-  };
-
-  const onMouseDown: React.MouseEventHandler<HTMLDivElement> = () => {
-    dispatch({ type: 'viewport-begin' });
-  };
-
-  const onMouseMove: React.MouseEventHandler<HTMLDivElement> = (e) => {
-    dispatch({
-      type: 'viewport-move',
-      position: { x: e.movementX, y: e.movementY },
-    });
-  };
-
-  const onMouseUp: React.MouseEventHandler<HTMLDivElement> = () => {
-    dispatch({ type: 'viewport-end' });
-  };
-
-  console.log(state);
-
   return (
-    <div
-      onMouseDown={onMouseDown}
-      onMouseMove={onMouseMove}
-      onMouseUp={onMouseUp}
+    <svg
       className={css`
-        position: relative;
+        width: 100%;
         height: 100%;
-        cursor: ${state.state.viewport.moving ? 'grabbing' : 'grab'};
-        overflow: hidden;
       `}
+      onMouseMove={(e) => {
+        dispatch({
+          type: 'move',
+          position: {
+            x: e.movementX,
+            y: e.movementY,
+          },
+        });
+      }}
+      onMouseLeave={() => {
+        dispatch({
+          type: 'leave',
+        });
+      }}
     >
-      <Grid />
-      <div
-        className={css`
-          position: absolute;
-          top: 0;
-          left: 0;
-          right: 0;
-          bottom: 0;
-          transform: translate(
-            ${state.state.viewport.position.x}px,
-            ${state.state.viewport.position.y}px
-          );
-        `}
+      <filter id="shadow">
+        <feDropShadow
+          dx="0.2"
+          dy="0.4"
+          stdDeviation="0.2"
+          floodColor="#d3d3d3"
+        />
+      </filter>
+      <g
+        style={{
+          transform: `translate(${state.state.viewport.position.x.toString()}px, ${state.state.viewport.position.y.toString()}px)`,
+        }}
       >
-        <DndContext
-          modifiers={[restrictToParentElement]}
-          onDragStart={onDragStart}
-          onDragMove={onDragMove}
-          onDragEnd={onDragEnd}
-        >
-          {Object.keys(state.data.components).map((id) => (
-            <Component
-              key={id}
-              id={id}
-              data={state.data.components[id]}
-              active={id === state.state.activeComponent?.id}
-            />
-          ))}
-        </DndContext>
-      </div>
-    </div>
+        <Grid
+          moving={state.state.viewport.moving}
+          position={state.state.viewport.position}
+          onMouseDown={() => {
+            dispatch({ type: 'viewport-begin' });
+          }}
+          onMouseUp={() => {
+            dispatch({ type: 'viewport-end' });
+          }}
+        />
+        {Object.keys(state.data.components).map((id) => (
+          <Component
+            key={id}
+            id={id}
+            data={state.data.components[id]}
+            state={
+              id === state.state.activeComponent?.id
+                ? state.state.activeComponent.state
+                : ComponentState.Default
+            }
+            onMouseDown={() => {
+              dispatch({ type: 'move-begin', id });
+            }}
+            onMouseUp={() => {
+              dispatch({ type: 'move-end' });
+            }}
+            onDoubleClick={() => {
+              dispatch({ type: 'edit-begin', id });
+            }}
+            onEditDone={(text: string) => {
+              dispatch({ type: 'edit-end', text });
+            }}
+          />
+        ))}
+      </g>
+    </svg>
   );
 }
