@@ -9,4 +9,16 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-export const Example: Story = {};
+export const Example: Story = {
+  args: {
+    initialData: {
+      components: {
+        test: {
+          name: 'Test',
+          position: { x: 10, y: 10 },
+          size: { width: 150, height: 50 },
+        },
+      },
+    },
+  },
+};

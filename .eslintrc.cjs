@@ -22,4 +22,7 @@ module.exports = {
     },
   },
   ignorePatterns: ['!.*', 'dist', 'node_modules', 'storybook-static'],
+  rules: {
+    '@typescript-eslint/consistent-type-definitions': ['error', 'type'],
+  },
 };
