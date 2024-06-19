@@ -1,6 +1,6 @@
 import { css } from '@emotion/css';
 
-import { ComponentState, DiagramData, ScalePosition } from './types';
+import { DiagramData, AnchorPosition } from './types';
 import useDiagram from './Diagram.reducer';
 import Grid from './Grid';
 import Component from './Component';
@@ -20,8 +20,8 @@ export default function Diagram({ initialData }: Props) {
       `}
       onMouseMove={(e) => {
         dispatch({
-          type: 'move',
-          position: {
+          type: 'mouseMove',
+          movement: {
             x: e.movementX,
             y: e.movementY,
           },
@@ -29,18 +29,18 @@ export default function Diagram({ initialData }: Props) {
       }}
       onMouseUp={() => {
         dispatch({
-          type: 'mouse-up',
+          type: 'mouseUp',
         });
       }}
       onMouseLeave={() => {
         dispatch({
-          type: 'leave',
+          type: 'mouseLeave',
         });
       }}
       onWheel={(e) => {
         dispatch({
-          type: e.deltaY > 0 ? 'zoom-in' : 'zoom-out',
-          value: Math.abs(e.deltaY) * 0.05,
+          type: 'mouseWheel',
+          delta: e.deltaY,
         });
       }}
     >
@@ -54,11 +54,13 @@ export default function Diagram({ initialData }: Props) {
       </filter>
       <g
         style={{
-          transform: `translate(${state.state.viewport.position.x.toString()}px, ${state.state.viewport.position.y.toString()}px) scale(${state.state.viewport.zoom.toString()}, ${state.state.viewport.zoom.toString()})`,
+          transform: `translate(${state.state.position.x.toString()}px, ${state.state.position.y.toString()}px) scale(${state.state.zoom.toString()}, ${state.state.zoom.toString()})`,
         }}
       >
         <Grid
-          viewport={state.state.viewport}
+          position={state.state.position}
+          zoom={state.state.zoom}
+          moving={state.state.action.type === 'ViewportMoving'}
           onMouseDown={() => {
             dispatch({ type: 'viewport-begin' });
           }}
@@ -68,21 +70,21 @@ export default function Diagram({ initialData }: Props) {
             key={id}
             id={id}
             data={state.data.components[id]}
-            state={
-              id === state.state.activeComponent?.id
-                ? state.state.activeComponent.state
-                : ComponentState.None
+            editing={
+              state.state.selected.includes(id) &&
+              state.state.action.type === 'Editing'
             }
+            selected={state.state.selected.includes(id)}
             onMouseDown={() => {
               dispatch({ type: 'move-begin', id });
             }}
             onDoubleClick={() => {
               dispatch({ type: 'edit-begin', id });
             }}
-            onEditDone={(text: string) => {
+            onEdit={(text: string) => {
               dispatch({ type: 'edit-end', text });
             }}
-            onScaleBegin={(position: ScalePosition) => {
+            onScaleBegin={(position: AnchorPosition) => {
               dispatch({ type: 'scale-begin', id, position });
             }}
           />

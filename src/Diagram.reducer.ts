@@ -1,53 +1,33 @@
 import { useReducer } from 'react';
-import {
-  ComponentState,
-  DiagramData,
-  Position,
-  ScalePosition,
-  ViewportState,
-} from './types';
+import { DiagramData, DiagramState, Position, AnchorPosition } from './types';
 
 type State = {
   data: DiagramData;
   state: DiagramState;
 };
 
-type DiagramState = {
-  activeComponent: ActiveComponent | null;
-  viewport: ViewportState;
-};
-
-type ActiveComponent = {
-  id: string;
-  state: ComponentState;
-  scalePosition?: ScalePosition;
-};
-
 type DiagramAction =
   | { type: 'move-begin'; id: string }
   | { type: 'viewport-begin' }
-  | { type: 'move'; position: Position }
-  | { type: 'mouse-up' }
-  | { type: 'leave' }
+  | { type: 'mouseMove'; movement: Position }
+  | { type: 'mouseUp' }
+  | { type: 'mouseLeave' }
   | { type: 'edit-begin'; id: string }
   | { type: 'edit-end'; text: string }
-  | { type: 'zoom-in'; value: number }
-  | { type: 'zoom-out'; value: number }
-  | { type: 'scale-begin'; id: string; position: ScalePosition };
+  | { type: 'mouseWheel'; delta: number }
+  | { type: 'scale-begin'; id: string; position: AnchorPosition };
 
 export default function useDiagram(initialData: DiagramData) {
   return useReducer(reducer, {
     data: initialData,
     state: {
-      activeComponent: null,
-      viewport: {
-        moving: false,
-        zoom: 1,
-        position: {
-          x: 0,
-          y: 0,
-        },
+      position: {
+        x: 0,
+        y: 0,
       },
+      zoom: 1,
+      action: { type: 'None' },
+      selected: [],
     },
   });
 }
@@ -59,33 +39,25 @@ function reducer(state: State, action: DiagramAction): State {
         ...state,
         state: {
           ...state.state,
-          activeComponent: {
-            id: action.id,
-            state: ComponentState.Moving,
-          },
+          action: { type: 'Moving' },
+          selected: state.state.selected.length
+            ? state.state.selected
+            : [action.id],
         },
       };
 
-    case 'mouse-up':
-      if (state.state.viewport.moving) {
+    case 'mouseUp':
+      if (
+        state.state.action.type === 'Moving' ||
+        state.state.action.type === 'ViewportMoving' ||
+        state.state.action.type === 'Scaling'
+      ) {
         return {
           ...state,
           state: {
             ...state.state,
-            viewport: {
-              ...state.state.viewport,
-              moving: false,
-            },
-          },
-        };
-      } else if (state.state.activeComponent) {
-        return {
-          ...state,
-          state: {
-            ...state.state,
-            activeComponent: {
-              ...state.state.activeComponent,
-              state: ComponentState.Selected,
+            action: {
+              type: 'None',
             },
           },
         };
@@ -94,105 +66,109 @@ function reducer(state: State, action: DiagramAction): State {
       }
 
     case 'viewport-begin':
-      return {
-        ...state,
-        state: {
-          ...state.state,
-          activeComponent: null,
-          viewport: {
-            ...state.state.viewport,
-            moving: true,
-          },
-        },
-      };
-
-    case 'move':
-      if (state.state.activeComponent?.state === ComponentState.Moving) {
-        const activeId = state.state.activeComponent.id;
-        const newComponent = { ...state.data.components[activeId] };
-        newComponent.position = {
-          x:
-            newComponent.position.x +
-            action.position.x / state.state.viewport.zoom,
-          y:
-            newComponent.position.y +
-            action.position.y / state.state.viewport.zoom,
-        };
-
-        return {
-          ...state,
-          data: {
-            ...state.data,
-            components: {
-              ...state.data.components,
-              [activeId]: newComponent,
-            },
-          },
-        };
-      } else if (
-        state.state.activeComponent?.state === ComponentState.Scaling
-      ) {
-        const activeId = state.state.activeComponent.id;
-        const newComponent = { ...state.data.components[activeId] };
-        const scalePosition = state.state.activeComponent.scalePosition;
-
-        const xModifier = action.position.x / state.state.viewport.zoom;
-        const yModifier = action.position.y / state.state.viewport.zoom;
-
-        newComponent.position = {
-          x:
-            newComponent.position.x +
-            (scalePosition === ScalePosition.TopLeft ||
-            scalePosition === ScalePosition.BottomLeft
-              ? xModifier
-              : 0),
-          y:
-            newComponent.position.y +
-            (scalePosition === ScalePosition.TopLeft ||
-            scalePosition === ScalePosition.TopRight
-              ? yModifier
-              : 0),
-        };
-        newComponent.size = {
-          width:
-            newComponent.size.width +
-            (scalePosition === ScalePosition.TopRight ||
-            scalePosition === ScalePosition.BottomRight
-              ? xModifier
-              : -xModifier),
-          height:
-            newComponent.size.height +
-            (scalePosition === ScalePosition.BottomLeft ||
-            scalePosition === ScalePosition.BottomRight
-              ? yModifier
-              : -yModifier),
-        };
-
-        if (newComponent.size.width < 30 || newComponent.size.height < 30) {
-          return state;
-        }
-
-        return {
-          ...state,
-          data: {
-            ...state.data,
-            components: {
-              ...state.data.components,
-              [activeId]: newComponent,
-            },
-          },
-        };
-      } else if (state.state.viewport.moving) {
+      if (state.state.action.type === 'None') {
         return {
           ...state,
           state: {
             ...state.state,
-            viewport: {
-              ...state.state.viewport,
-              position: {
-                x: state.state.viewport.position.x + action.position.x,
-                y: state.state.viewport.position.y + action.position.y,
-              },
+            action: { type: 'ViewportMoving' },
+            selected: [],
+          },
+        };
+      } else {
+        return state;
+      }
+
+    case 'mouseMove':
+      if (state.state.action.type === 'Moving') {
+        const newComponents = {
+          ...state.data.components,
+        };
+
+        state.state.selected.forEach((selectedId) => {
+          newComponents[selectedId] = {
+            ...newComponents[selectedId],
+            position: {
+              x:
+                newComponents[selectedId].position.x +
+                action.movement.x / state.state.zoom,
+              y:
+                newComponents[selectedId].position.y +
+                action.movement.y / state.state.zoom,
+            },
+          };
+        });
+
+        return {
+          ...state,
+          data: {
+            ...state.data,
+            components: newComponents,
+          },
+        };
+      } else if (state.state.action.type === 'Scaling') {
+        const newComponents = {
+          ...state.data.components,
+        };
+
+        const scalePosition = state.state.action.anchor;
+
+        state.state.selected.forEach((selectedId) => {
+          const xModifier = action.movement.x / state.state.zoom;
+          const yModifier = action.movement.y / state.state.zoom;
+
+          newComponents[selectedId] = {
+            ...newComponents[selectedId],
+            position: {
+              x:
+                newComponents[selectedId].position.x +
+                (scalePosition === AnchorPosition.TopLeft ||
+                scalePosition === AnchorPosition.BottomLeft
+                  ? xModifier
+                  : 0),
+              y:
+                newComponents[selectedId].position.y +
+                (scalePosition === AnchorPosition.TopLeft ||
+                scalePosition === AnchorPosition.TopRight
+                  ? yModifier
+                  : 0),
+            },
+            size: {
+              width: Math.max(
+                30,
+                newComponents[selectedId].size.width +
+                  (scalePosition === AnchorPosition.TopRight ||
+                  scalePosition === AnchorPosition.BottomRight
+                    ? xModifier
+                    : -xModifier),
+              ),
+              height: Math.max(
+                30,
+                newComponents[selectedId].size.height +
+                  (scalePosition === AnchorPosition.BottomLeft ||
+                  scalePosition === AnchorPosition.BottomRight
+                    ? yModifier
+                    : -yModifier),
+              ),
+            },
+          };
+        });
+
+        return {
+          ...state,
+          data: {
+            ...state.data,
+            components: newComponents,
+          },
+        };
+      } else if (state.state.action.type === 'ViewportMoving') {
+        return {
+          ...state,
+          state: {
+            ...state.state,
+            position: {
+              x: state.state.position.x + action.movement.x,
+              y: state.state.position.y + action.movement.y,
             },
           },
         };
@@ -200,28 +176,16 @@ function reducer(state: State, action: DiagramAction): State {
         return state;
       }
 
-    case 'leave':
-      if (state.state.viewport.moving) {
+    case 'mouseLeave':
+      if (
+        state.state.action.type === 'ViewportMoving' ||
+        state.state.action.type === 'Moving'
+      ) {
         return {
           ...state,
           state: {
             ...state.state,
-            viewport: {
-              ...state.state.viewport,
-              moving: false,
-            },
-          },
-        };
-      } else if (state.state.activeComponent?.state === ComponentState.Moving) {
-        return {
-          ...state,
-          state: {
-            ...state.state,
-            activeComponent: null,
-            viewport: {
-              ...state.state.viewport,
-              moving: false,
-            },
+            action: { type: 'None' },
           },
         };
       } else {
@@ -233,16 +197,16 @@ function reducer(state: State, action: DiagramAction): State {
         ...state,
         state: {
           ...state.state,
-          activeComponent: {
-            id: action.id,
-            state: ComponentState.Editing,
-          },
+          action: { type: 'Editing' },
         },
       };
 
     case 'edit-end':
-      if (state.state.activeComponent?.state === ComponentState.Editing) {
-        const activeId = state.state.activeComponent.id;
+      if (
+        state.state.action.type === 'Editing' &&
+        state.state.selected.length
+      ) {
+        const activeId = state.state.selected[0];
         const newComponent = { ...state.data.components[activeId] };
         newComponent.name = action.text;
 
@@ -257,37 +221,20 @@ function reducer(state: State, action: DiagramAction): State {
           },
           state: {
             ...state.state,
-            activeComponent: null,
+            action: { type: 'None' },
+            selected: [],
           },
         };
       } else {
         return state;
       }
 
-    case 'zoom-in':
+    case 'mouseWheel':
       return {
         ...state,
         state: {
           ...state.state,
-          viewport: {
-            ...state.state.viewport,
-            zoom: state.state.viewport.zoom + 0.05 * action.value,
-          },
-        },
-      };
-
-    case 'zoom-out':
-      return {
-        ...state,
-        state: {
-          ...state.state,
-          viewport: {
-            ...state.state.viewport,
-            zoom: Math.max(
-              0.05,
-              state.state.viewport.zoom - 0.05 * action.value,
-            ),
-          },
+          zoom: state.state.zoom + 0.0025 * action.delta,
         },
       };
 
@@ -296,26 +243,9 @@ function reducer(state: State, action: DiagramAction): State {
         ...state,
         state: {
           ...state.state,
-          activeComponent: {
-            id: action.id,
-            state: ComponentState.Scaling,
-            scalePosition: action.position,
-          },
+          action: { type: 'Scaling', anchor: action.position },
         },
       };
-
-    case 'scale-end':
-      if (state.state.activeComponent?.state === ComponentState.Scaling) {
-        return {
-          ...state,
-          state: {
-            ...state.state,
-            activeComponent: null,
-          },
-        };
-      } else {
-        return state;
-      }
 
     default:
       return state;

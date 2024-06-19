@@ -1,14 +1,13 @@
-import { ViewportState } from './types';
+import { Position } from './types';
 
 type Props = {
-  viewport: ViewportState;
+  position: Position;
+  zoom: number;
+  moving: boolean;
   onMouseDown: () => void;
 };
 
-export default function Grid({
-  viewport: { moving, position, zoom },
-  onMouseDown,
-}: Props) {
+export default function Grid({ position, zoom, moving, onMouseDown }: Props) {
   return (
     <>
       <defs>

@@ -1,40 +1,42 @@
 import { css } from '@emotion/css';
-import { ComponentData, ComponentState, ScalePosition } from './types';
+import { ComponentData, AnchorPosition } from './types';
 import { useEffect, useRef } from 'react';
 
 type Props = {
   id: string;
   data: ComponentData;
-  state: ComponentState;
+  selected: boolean;
+  editing: boolean;
   onMouseDown: () => void;
   onDoubleClick: () => void;
-  onEditDone: (text: string) => void;
-  onScaleBegin: (position: ScalePosition) => void;
+  onEdit: (text: string) => void;
+  onScaleBegin: (position: AnchorPosition) => void;
 };
 
 export default function Component({
   data: { name, position, size },
-  state,
+  selected,
+  editing,
   onMouseDown,
   onDoubleClick,
-  onEditDone,
+  onEdit,
   onScaleBegin,
 }: Props) {
   const inputRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (state === ComponentState.Editing) {
+    if (editing) {
       if (inputRef.current) {
         inputRef.current.innerHTML = name;
         inputRef.current.focus();
       }
     }
-  }, [state]);
+  }, [editing]);
 
   return (
     <g
       className={css`
-        cursor: ${state === ComponentState.Editing ? 'text' : 'move'};
+        cursor: ${editing ? 'text' : 'move'};
         user-select: none;
       `}
       onMouseDown={(e) => {
@@ -65,18 +67,17 @@ export default function Component({
         width={size.width}
         height={size.height}
       >
-        {state === ComponentState.Editing ? (
+        {editing ? (
           <div
             ref={inputRef}
             contentEditable
             onBlur={(e) => {
-              onEditDone(e.target.innerHTML);
+              onEdit(e.target.innerHTML);
             }}
             onKeyDown={(e) => {
               if (e.code === 'Escape') {
                 const target = e.target as HTMLDivElement;
-                onEditDone(target.innerHTML);
-                console.log(target.innerHTML);
+                onEdit(target.innerHTML);
               }
             }}
             onFocus={(e) => {
@@ -117,7 +118,7 @@ export default function Component({
       </foreignObject>
 
       <rect
-        fill={state === ComponentState.None ? 'transparent' : '#29b6f2'}
+        fill={selected ? '#29b6f2' : 'transparent'}
         x={position.x - 4}
         y={position.y - 4}
         width={8}
@@ -127,11 +128,11 @@ export default function Component({
         `}
         onMouseDown={(e) => {
           e.stopPropagation();
-          onScaleBegin(ScalePosition.TopLeft);
+          onScaleBegin(AnchorPosition.TopLeft);
         }}
       />
       <rect
-        fill={state === ComponentState.None ? 'transparent' : '#29b6f2'}
+        fill={selected ? '#29b6f2' : 'transparent'}
         x={position.x + size.width - 4}
         y={position.y - 4}
         width={8}
@@ -141,11 +142,11 @@ export default function Component({
         `}
         onMouseDown={(e) => {
           e.stopPropagation();
-          onScaleBegin(ScalePosition.TopRight);
+          onScaleBegin(AnchorPosition.TopRight);
         }}
       />
       <rect
-        fill={state === ComponentState.None ? 'transparent' : '#29b6f2'}
+        fill={selected ? '#29b6f2' : 'transparent'}
         x={position.x - 4}
         y={position.y + size.height - 4}
         width={8}
@@ -155,11 +156,11 @@ export default function Component({
         `}
         onMouseDown={(e) => {
           e.stopPropagation();
-          onScaleBegin(ScalePosition.BottomLeft);
+          onScaleBegin(AnchorPosition.BottomLeft);
         }}
       />
       <rect
-        fill={state === ComponentState.None ? 'transparent' : '#29b6f2'}
+        fill={selected ? '#29b6f2' : 'transparent'}
         x={position.x + size.width - 4}
         y={position.y + size.height - 4}
         width={8}
@@ -169,7 +170,7 @@ export default function Component({
         `}
         onMouseDown={(e) => {
           e.stopPropagation();
-          onScaleBegin(ScalePosition.BottomRight);
+          onScaleBegin(AnchorPosition.BottomRight);
         }}
       />
     </g>
