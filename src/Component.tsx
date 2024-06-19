@@ -117,7 +117,7 @@ export default function Component({
       </foreignObject>
 
       <rect
-        fill={state === ComponentState.None ? 'none' : '#29b6f2'}
+        fill={state === ComponentState.None ? 'transparent' : '#29b6f2'}
         x={position.x - 4}
         y={position.y - 4}
         width={8}
@@ -131,7 +131,7 @@ export default function Component({
         }}
       />
       <rect
-        fill={state === ComponentState.None ? 'none' : '#29b6f2'}
+        fill={state === ComponentState.None ? 'transparent' : '#29b6f2'}
         x={position.x + size.width - 4}
         y={position.y - 4}
         width={8}
@@ -145,7 +145,7 @@ export default function Component({
         }}
       />
       <rect
-        fill={state === ComponentState.None ? 'none' : '#29b6f2'}
+        fill={state === ComponentState.None ? 'transparent' : '#29b6f2'}
         x={position.x - 4}
         y={position.y + size.height - 4}
         width={8}
@@ -159,7 +159,7 @@ export default function Component({
         }}
       />
       <rect
-        fill={state === ComponentState.None ? 'none' : '#29b6f2'}
+        fill={state === ComponentState.None ? 'transparent' : '#29b6f2'}
         x={position.x + size.width - 4}
         y={position.y + size.height - 4}
         width={8}
