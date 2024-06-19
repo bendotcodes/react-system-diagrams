@@ -1,17 +1,13 @@
-import { Position } from './types';
+import { ViewportState } from './types';
 
 type Props = {
-  moving: boolean;
-  position: Position;
+  viewport: ViewportState;
   onMouseDown: () => void;
-  onMouseUp: () => void;
 };
 
 export default function Grid({
-  moving,
-  position,
+  viewport: { moving, position, zoom },
   onMouseDown,
-  onMouseUp,
 }: Props) {
   return (
     <>
@@ -40,17 +36,14 @@ export default function Grid({
         </pattern>
       </defs>
       <rect
-        x={-position.x}
-        y={-position.y}
-        width="100%"
-        height="100%"
+        x={-position.x / zoom}
+        y={-position.y / zoom}
+        width={`${((1 / zoom) * 100).toString()}%`}
+        height={`${((1 / zoom) * 100).toString()}%`}
         fill="url(#grid)"
         style={{ cursor: moving ? 'grabbing' : 'grab' }}
         onMouseDown={() => {
           onMouseDown();
-        }}
-        onMouseUp={() => {
-          onMouseUp();
         }}
       />
     </>

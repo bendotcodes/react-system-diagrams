@@ -14,12 +14,27 @@ export type ComponentData = {
   size: Size;
 };
 
+export type ViewportState = {
+  moving: boolean;
+  position: Position;
+  zoom: number;
+};
+
 export enum ComponentState {
-  Default,
+  None,
+  Selected,
   Moving,
   Editing,
+  Scaling,
 }
 
 export type DiagramData = {
   components: Record<string, ComponentData>;
 };
+
+export enum ScalePosition {
+  TopLeft,
+  TopRight,
+  BottomLeft,
+  BottomRight,
+}

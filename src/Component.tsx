@@ -1,5 +1,5 @@
 import { css } from '@emotion/css';
-import { ComponentData, ComponentState } from './types';
+import { ComponentData, ComponentState, ScalePosition } from './types';
 import { useEffect, useRef } from 'react';
 
 type Props = {
@@ -7,18 +7,18 @@ type Props = {
   data: ComponentData;
   state: ComponentState;
   onMouseDown: () => void;
-  onMouseUp: () => void;
   onDoubleClick: () => void;
   onEditDone: (text: string) => void;
+  onScaleBegin: (position: ScalePosition) => void;
 };
 
 export default function Component({
   data: { name, position, size },
   state,
   onMouseDown,
-  onMouseUp,
   onDoubleClick,
   onEditDone,
+  onScaleBegin,
 }: Props) {
   const inputRef = useRef<HTMLDivElement>(null);
 
@@ -37,13 +37,12 @@ export default function Component({
         cursor: ${state === ComponentState.Editing ? 'text' : 'move'};
         user-select: none;
       `}
-      onMouseDown={() => {
+      onMouseDown={(e) => {
+        e.stopPropagation();
         onMouseDown();
       }}
-      onMouseUp={() => {
-        onMouseUp();
-      }}
-      onDoubleClick={() => {
+      onDoubleClick={(e) => {
+        e.stopPropagation();
         onDoubleClick();
       }}
     >
@@ -116,6 +115,63 @@ export default function Component({
           ></div>
         )}
       </foreignObject>
+
+      <rect
+        fill={state === ComponentState.None ? 'none' : '#29b6f2'}
+        x={position.x - 4}
+        y={position.y - 4}
+        width={8}
+        height={8}
+        className={css`
+          cursor: nw-resize;
+        `}
+        onMouseDown={(e) => {
+          e.stopPropagation();
+          onScaleBegin(ScalePosition.TopLeft);
+        }}
+      />
+      <rect
+        fill={state === ComponentState.None ? 'none' : '#29b6f2'}
+        x={position.x + size.width - 4}
+        y={position.y - 4}
+        width={8}
+        height={8}
+        className={css`
+          cursor: ne-resize;
+        `}
+        onMouseDown={(e) => {
+          e.stopPropagation();
+          onScaleBegin(ScalePosition.TopRight);
+        }}
+      />
+      <rect
+        fill={state === ComponentState.None ? 'none' : '#29b6f2'}
+        x={position.x - 4}
+        y={position.y + size.height - 4}
+        width={8}
+        height={8}
+        className={css`
+          cursor: sw-resize;
+        `}
+        onMouseDown={(e) => {
+          e.stopPropagation();
+          onScaleBegin(ScalePosition.BottomLeft);
+        }}
+      />
+      <rect
+        fill={state === ComponentState.None ? 'none' : '#29b6f2'}
+        x={position.x + size.width - 4}
+        y={position.y + size.height - 4}
+        width={8}
+        height={8}
+        className={css`
+          cursor: se-resize;
+        `}
+        onMouseDown={(e) => {
+          e.stopPropagation();
+          onScaleBegin(ScalePosition.BottomRight);
+        }}
+      />
     </g>
   );
 }

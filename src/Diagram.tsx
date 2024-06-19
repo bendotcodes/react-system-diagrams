@@ -1,6 +1,6 @@
 import { css } from '@emotion/css';
 
-import { ComponentState, DiagramData } from './types';
+import { ComponentState, DiagramData, ScalePosition } from './types';
 import useDiagram from './Diagram.reducer';
 import Grid from './Grid';
 import Component from './Component';
@@ -27,9 +27,20 @@ export default function Diagram({ initialData }: Props) {
           },
         });
       }}
+      onMouseUp={() => {
+        dispatch({
+          type: 'mouse-up',
+        });
+      }}
       onMouseLeave={() => {
         dispatch({
           type: 'leave',
+        });
+      }}
+      onWheel={(e) => {
+        dispatch({
+          type: e.deltaY > 0 ? 'zoom-in' : 'zoom-out',
+          value: Math.abs(e.deltaY) * 0.05,
         });
       }}
     >
@@ -43,17 +54,13 @@ export default function Diagram({ initialData }: Props) {
       </filter>
       <g
         style={{
-          transform: `translate(${state.state.viewport.position.x.toString()}px, ${state.state.viewport.position.y.toString()}px)`,
+          transform: `translate(${state.state.viewport.position.x.toString()}px, ${state.state.viewport.position.y.toString()}px) scale(${state.state.viewport.zoom.toString()}, ${state.state.viewport.zoom.toString()})`,
         }}
       >
         <Grid
-          moving={state.state.viewport.moving}
-          position={state.state.viewport.position}
+          viewport={state.state.viewport}
           onMouseDown={() => {
             dispatch({ type: 'viewport-begin' });
-          }}
-          onMouseUp={() => {
-            dispatch({ type: 'viewport-end' });
           }}
         />
         {Object.keys(state.data.components).map((id) => (
@@ -64,19 +71,19 @@ export default function Diagram({ initialData }: Props) {
             state={
               id === state.state.activeComponent?.id
                 ? state.state.activeComponent.state
-                : ComponentState.Default
+                : ComponentState.None
             }
             onMouseDown={() => {
               dispatch({ type: 'move-begin', id });
-            }}
-            onMouseUp={() => {
-              dispatch({ type: 'move-end' });
             }}
             onDoubleClick={() => {
               dispatch({ type: 'edit-begin', id });
             }}
             onEditDone={(text: string) => {
               dispatch({ type: 'edit-end', text });
+            }}
+            onScaleBegin={(position: ScalePosition) => {
+              dispatch({ type: 'scale-begin', id, position });
             }}
           />
         ))}
